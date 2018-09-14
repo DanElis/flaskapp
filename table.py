@@ -54,7 +54,7 @@ class Page():
 		self.columns_df1 = [col for col in self.df1.columns if self.is_number(col)]
 		self.columns_df2 = [col for col in self.df2.columns if self.is_number(col)]
 		
-		self.select_plots = [0 for i in range(len(self.columns) + len(self.columns))]
+		self.select_plots = [0 for i in range(len(self.columns_df1) + len(self.columns_df1))]
 	
 		wells = self.df1['Well Name'].unique().tolist()
 		wells = [well for well in wells if well not in ['Recruit F9']]
@@ -82,7 +82,7 @@ class Page():
 		data_matrix = self.init_data_matrix(self.df1,self.df2)
 		self.plot_matrix = self.draw_matrix(data_matrix)
 		self.plot_matrix.on_event(Tap, self.update_plots)
-		
+
 		self.layout.children = [self.tabs,row(self.select_data_files1,self.select_data_files2),
 						self.refresh_button,self.plot_matrix]
 
@@ -189,7 +189,7 @@ class Page():
 		yrange2 = self.get_y_range(sdata2)
 
 		plots1 = row([self.draw_plot_rock(sdata1, col, yrange1, i == 0) for i, col in enumerate(self.columns_df1) if self.select_plots[i] == 1])
-		plots2 = row([self.draw_plot_rock(sdata2, col2, yrange2, j == 0) for j, col2 in enumerate(self.columns_df2) if self.select_plots[len(self.columns)+j] == 1])
+		plots2 = row([self.draw_plot_rock(sdata2, col2, yrange2, j == 0) for j, col2 in enumerate(self.columns_df2) if self.select_plots[len(self.columns_df2)+j] == 1])
 		
 		self.plots_rock.children =[plots1,plots2]
 		
