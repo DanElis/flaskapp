@@ -10,8 +10,12 @@ from bokeh.models.widgets import CheckboxGroup
 from bokeh.models.widgets import Panel, Tabs, RadioButtonGroup
 import os 
 import numpy
+
 class Page():
+	
 	def __init__(self):
+		self.WIDTH_MATRIX = 1
+		self.HEIGHT_MATRIX = 1	
 		self.tabs =  RadioButtonGroup(labels = ['Page1','Page2'],active = 0)
 		self.tabs.on_change('active', lambda attr, old, new: self.change_page())
 
@@ -127,39 +131,39 @@ class Page():
 		return res
 
 	def update_plots(self,event):
-		length_columns = len(self.columns_df1)  #!!!
-		x = int(event.x)#/self.plot_matrix.width)
-		y = int(event.y) #/self.plot_matrix.height)
-		if(self.select_plots.count((1,self.columns_df1[x])) == 1 and self.select_plots.count((2,self.columns_df2[length_columns-y-1])) == 1):
+		length_columns_df1 = len(self.columns_df1)
+		length_columns_df2 = len(self.columns_df2) 
+		x = int((event.x)/self.WIDTH_MATRIX)
+		y = int((event.y)/self.HEIGHT_MATRIX)
+		if(self.select_plots.count((1,self.columns_df1[x])) >= 1 and self.select_plots.count((2,self.columns_df2[length_columns_df2-y-1])) >= 1):
 
 			self.select_plots.remove((1,self.columns_df1[x]))
-			self.select_plots.remove((2,self.columns_df2[length_columns-y-1]))
+			self.select_plots.remove((2,self.columns_df2[length_columns_df2-y-1]))
 
-		elif(event.x<0 or event.x > length_columns):
-			if(self.select_plots.count((2,self.columns_df2[length_columns-y-1])) == 1):
-				self.select_plots.remove((2,self.columns_df2[length_columns-y-1]))
+		elif(event.x<0 or event.x > length_columns_df1):
+			if(self.select_plots.count((2,self.columns_df2[length_columns_df2-y-1])) >= 1):
+				self.select_plots.remove((2,self.columns_df2[length_columns_df2-y-1]))
 			else:
-				self.select_plots.append((2,self.columns_df2[length_columns-y-1]))
-		elif(event.y<0 or event.y > length_columns):
-			if(self.select_plots.count((1,self.columns_df1[x])) == 1):
+				self.select_plots.append((2,self.columns_df2[length_columns_df2-y-1]))
+		elif(event.y<0 or event.y > length_columns_df2):
+			if(self.select_plots.count((1,self.columns_df1[x])) >= 1):
 				self.select_plots.remove((1,self.columns_df1[x]))
 			else:
 				self.select_plots.append((1,self.columns_df1[x]))
-		elif((event.x or event.x > length_columns < 0) and (event.y < 0) or event.y > length_columns):
+		elif((event.x or event.x > length_columns_df1 < 0) and (event.y < 0) or event.y > length_columns_df2):
 			return
 		else:
 			self.select_plots.append((1,self.columns_df1[x]))
-			self.select_plots.append((2,self.columns_df2[length_columns-y-1]))
+			self.select_plots.append((2,self.columns_df2[length_columns_df2-y-1]))
 
 		sdata1 = self.df1[self.df1['Well Name'] == self.sel_well.value]
 		yrange1 = self.get_y_range(sdata1)
 		sdata2 = self.df2[self.df2['Well Name'] == self.sel_well.value]
 		yrange2 = self.get_y_range(sdata2)
 
-		plots1 = row([self.draw_plot_rock(sdata1, sdata2,col, yrange1,yrange2) for col in self.select_plots])
-		#plots2 = row([self.draw_plot_rock(sdata2, col2, yrange2) for col2 in enumerate(self.columns_df2) if self.select_plots[length_columns+j] == 1])
+		plots = row([self.draw_plot_rock(sdata1, sdata2,col, yrange1,yrange2) for col in self.select_plots])
 		
-		self.plots_rock.children = [plots1]
+		self.plots_rock.children = [plots]
 		
 	def update_set_data_(self):
 		r = self.df1[self.select_df1_corr.value]
@@ -216,7 +220,6 @@ class Page():
 			for col in self.columns_df2:
 				matrix[r].append(float(self.toFixed(numpy.corrcoef(df1[r], df2[col])[0,1],3)))
 		data = pd.DataFrame(data = matrix)
-		print(data.columns)
 		data.index = list(self.columns_df2)
 		data.index.name = 'rows'
 		data.columns.name = 'columns'
@@ -231,9 +234,9 @@ class Page():
 		mapper = LinearColorMapper(palette=colors, low=df.rate.min(), high=df.rate.max())
 
 		plot_matrix = figure(plot_width=800, plot_height=300, title="",
-				   x_range=list(data.index), y_range=list(reversed(self.columns_df1)),
+				   x_range=list(self.columns_df2), y_range=list(reversed(self.columns_df1)),
 				   toolbar_location=None, tools="", x_axis_location="above")
-		plot_matrix.rect(x="rows", y="columns", width=1, height=1, source=source,
+		plot_matrix.rect(x="rows", y="columns", width=self.WIDTH_MATRIX, height=self.HEIGHT_MATRIX, source=source,
 			   line_color=None, fill_color=transform('rate', mapper))
 		
 		self.r = plot_matrix.text(x=dodge("rows",-0.1,range = plot_matrix.x_range), y=dodge("columns",-0.2,range = plot_matrix.y_range), text="rate", **{"source":df})
