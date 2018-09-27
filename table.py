@@ -57,16 +57,17 @@ class Page():
 			print("incorrect data, expected format csv")
 			return
 
-		self.Y_COL = 'DEPTH'
-		
-		self.df1 = pd.read_csv('data/'+self.select_data_files1.value)
-		self.df2 = pd.read_csv('data/'+self.select_data_files1.value)
+		self.Y_COL = 'Depth'
 
-		self.columns_df1 = [col for col in self.df1.columns if self.is_number(col)]
-		self.columns_df2 = [col for col in self.df2.columns if self.is_number(col)]
-		
+		self.df1 = pd.read_csv('data/'+self.select_data_files1.value)
+		self.df2 = pd.read_csv('data/'+self.select_data_files2.value)
+		self.change_case_depth(self.df1,self.df2)
+
+		self.columns_df1 = [col for col in self.df1.columns if self.is_number(col,self.df1)]
+		self.columns_df2 = [col for col in self.df2.columns if self.is_number(col,self.df2)]
 		#self.select_plots = [-1 for i in range(len(self.columns_df1) + len(self.columns_df1))]
 		self.select_plots = []
+
 	#	wells = self.df1['Well Name'].unique().tolist()
 	#	wells = [well for well in wells if well not in ['Recruit F9']]
 		
@@ -75,13 +76,14 @@ class Page():
 		#self.pred_button.on_click(self.update_predict)
 
 		#self.plots_rock = self.init_plots_rock()
+
 		self.plots_rock = column()
 		self.source_correlation_plot = None
 		self.plot_correlation = self.init_corr()
 		
 		self.select_df1_corr = Select(title="Data frame 1:", value=self.columns_df1[0], options=self.columns_df1)
 		self.select_df2_corr = Select(title="Data frame 2:", value=self.columns_df2[1], options=self.columns_df2)
-		
+	
 		self.select_df1_corr.on_change('value',lambda attr, old, new:self.update_set_data())
 		self.select_df2_corr.on_change('value',lambda attr, old, new:self.update_set_data())
 		
@@ -96,9 +98,16 @@ class Page():
 
 		self.layout.children = [self.tabs,row(self.select_data_files1,self.select_data_files2),
 						self.refresh_button,self.plot_matrix]
+	def change_case_depth(self,df1,df2):
+		for col in df1.columns:
+			if(col.lower() == self.Y_COL.lower()):
+				df1.rename(columns={col:self.Y_COL}, inplace=True)
+		for col in df2.columns:
+			if(col.lower() == self.Y_COL.lower()):
+				df2.rename(columns={col:self.Y_COL}, inplace=True)
 
-	def is_number(self,col):
-		if(type(self.df1[col][0]).__name__ == "int64" or type(self.df1[col][0]).__name__ == "float64"):
+	def is_number(self,col,df):
+		if(type(df[col][0]).__name__ == "int64" or type(df[col][0]).__name__ == "float64"):
 			return True
 		return False
 
@@ -121,10 +130,7 @@ class Page():
 	    return f"{numObj:.{digits}f}"
 		
 	def get_y_range(self,df):
-		print(df)
-		print("get_y_range1")
 		ymin = df[self.Y_COL].min()
-		print("get_y_range2")
 		ymax = df[self.Y_COL].max()
 		res = Range1d(ymin, ymax)
 		return res
