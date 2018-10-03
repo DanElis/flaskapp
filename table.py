@@ -176,14 +176,17 @@ class Page():
 		
 	def draw_plot_rock(self,df1,df2, select_plots):
 		list_plots = []
+		source_df1 = ColumnDataSource(data=df1)
+		source_df2 = ColumnDataSource(data = df2)
+		yrange = self.get_y_range(df1)
 		for pair_data in self.select_plots:
-			source_df1 = ColumnDataSource(data=df1)
-			list_plots.append(self.init_plot_rock(pair_data[0][1],pair_data[0][1],self.Y_COL,source_df1,self.get_y_range(df1),'#0000ff'))
-			source_df2 = ColumnDataSource(data = df2)
-			list_plots.append(self.init_plot_rock(pair_data[1][1],pair_data[1][1],self.Y_COL,source_df2,self.get_y_range(df2),'#008000'))
+			
+			list_plots.append(self.init_plot_rock(pair_data[0][1],pair_data[0][1],self.Y_COL,source_df1,yrange,'#0000ff'))
+			
+			list_plots.append(self.init_plot_rock(pair_data[1][1],pair_data[1][1],self.Y_COL,source_df2,yrange,'#008000'))
 		return row(list_plots)
 	def init_plot_rock(self, title, x , y, source, yrange,color_title):
-		plot = figure(plot_width=200, plot_height=400, title=title, toolbar_location=None, active_scroll='wheel_zoom')
+		plot = figure(plot_width=200, plot_height=400, title=title, toolbar_location=None,tools = 'ywheel_zoom', active_scroll='ywheel_zoom')
 		plot.line(x, y, source=source, line_width=2)
 		plot.y_range = yrange
 		plot.title.text_color = color_title
