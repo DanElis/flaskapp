@@ -1,13 +1,12 @@
 import pandas as pd
-from bokeh.sampledata.periodic_table import elements
 from bokeh.io import output_file, show, curdoc
 from bokeh.models import BasicTicker,Select,Button,Range1d, ColorBar, ColumnDataSource, LinearColorMapper, PrintfTickFormatter
 from bokeh.plotting import figure
 from bokeh.layouts import column, row
 from bokeh.transform import transform,dodge
 from bokeh.events import Tap,Press
-from bokeh.models.widgets import CheckboxGroup
-from bokeh.models.widgets import Panel, Tabs, RadioButtonGroup
+from bokeh.models.widgets import Panel, Tabs, RadioButtonGroup,CheckboxGroup
+from bokeh.models.widgets.sliders import RangeSlider
 import os 
 import numpy
 
@@ -25,8 +24,8 @@ class Page():
 		self.select_data_files1 = Select(title="Data files 1:",value = "df1", options=["df1"]+self.data_files)
 		self.select_data_files2 = Select(title="Data files 2:",value = "df2", options=["df2"]+self.data_files)
 
-		self.select_data_files1.on_change('value',lambda attr, old,new:self.update_page())
-		self.select_data_files2.on_change('value',lambda attr, old,new:self.update_page())
+		self.select_data_files1.on_change('value',lambda attr, old,new:self.init_dataframes())
+		self.select_data_files2.on_change('value',lambda attr, old,new:self.init_dataframes())
 		self.refresh_button = Button(label="Refresh", button_type="success", width=100)
 		self.refresh_button.on_click(self.update_directory)
 
@@ -40,8 +39,11 @@ class Page():
 			self.tabs.active = 0;
 			return
 		if(self.tabs.active == 0):
-			self.layout.children = [self.tabs,row(self.select_data_files1,self.select_data_files2),
-						self.refresh_button,self.plot_matrix]
+			self.layout.children = [self.tabs,
+			row(self.select_data_files1,self.select_data_files2),
+						self.refresh_button,
+						self.slider_depth,
+						self.plot_matrix]
 		elif(self.tabs.active == 1):
 			self.layout.children = [self.tabs,
 			#self.sel_well,self.pred_button,
@@ -49,8 +51,7 @@ class Page():
 			row(column(self.select_df1_corr, self.checkbox_df1),
 				column(self.select_df2_corr,self.checkbox_df2)),
 			self.plot_correlation]
-
-	def update_page(self):
+	def init_dataframes(self):
 		if(self.select_data_files1.value == "df1" or self.select_data_files2.value == "df2"):
 			return
 		if(not self.select_data_files1.value.endswith('.csv') or not self.select_data_files2.value.endswith('.csv')):
@@ -58,10 +59,20 @@ class Page():
 			return
 
 		self.Y_COL = 'Depth'
+		self.main_df1,self.main_df2 = self.read_dataframe()
+		self.change_case_depth(self.main_df1,self.main_df2)
 
-		self.df1 = pd.read_csv('data/'+self.select_data_files1.value)
-		self.df2 = pd.read_csv('data/'+self.select_data_files2.value)
-		self.change_case_depth(self.df1,self.df2)
+		self.df1 = self.main_df1.copy()
+		self.df2 = self.main_df2.copy()
+
+		self.slider_depth = RangeSlider(start = self.min_total_depth(self.main_df1,self.main_df2), 
+				end = self.max_total_depth(self.main_df1,self.main_df2),step =1,
+				value = (self.min_total_depth(self.main_df1,self.main_df2),self.max_total_depth(self.main_df1,self.main_df2)))
+		self.slider_depth.on_change('value', self.change_depth)
+		self.update_page(True)
+
+	def update_page(self,is_change):
+		
 
 		self.columns_df1 = [col for col in self.df1.columns if self.is_number(col,self.df1)]
 		self.columns_df2 = [col for col in self.df2.columns if self.is_number(col,self.df2)]
@@ -97,7 +108,18 @@ class Page():
 		self.plot_matrix.on_event(Tap, self.update_plots)
 
 		self.layout.children = [self.tabs,row(self.select_data_files1,self.select_data_files2),
-						self.refresh_button,self.plot_matrix]
+							self.refresh_button,
+							self.slider_depth,
+							self.plot_matrix]
+	
+	def change_depth(self, attr, old, new):
+		self.df1 = self.df1[(self.df1[self.Y_COL] >= self.slider_depth.value[0]) & (self.df1[self.Y_COL] <= self.slider_depth.value[1])]
+		self.df2 = self.df2[(self.df2[self.Y_COL] >= self.slider_depth.value[0]) & (self.df2[self.Y_COL] <= self.slider_depth.value[1])]
+		self.update_page(False)
+	def min_total_depth(self,df1,df2):
+		return df1[self.Y_COL].min()
+	def max_total_depth(self,df1,df2):
+		return df1[self.Y_COL].max()
 	def change_case_depth(self,df1,df2):
 		for col in df1.columns:
 			if(col.lower() == self.Y_COL.lower()):
@@ -149,11 +171,8 @@ class Page():
 		else:
 			self.draw_select_cell(name = self.columns_df1[x]+self.columns_df2[length_columns_df2 - y - 1],x=x+0.5,y = y+0.5,width = 1, height =1)
 			self.select_plots.append(((1,self.columns_df1[x]),(2,self.columns_df2[length_columns_df2-y-1])))
-
-		sdata1 = self.df1
-		sdata2 = self.df2
 		
-		self.plots_rock.children = [self.draw_plot_rock(sdata1,sdata2,self.select_plots)]
+		self.plots_rock.children = [self.draw_plot_rock(self.df1,self.df2,self.select_plots)]
 	
 	def draw_select_cell(self,name,x,y,height,width):
 		self.plot_matrix.rect(x=x,y=y,width=width,height=height,fill_alpha=0,line_color="blue",name=name)
@@ -224,5 +243,9 @@ class Page():
 		plot_matrix.axis.axis_line_color = None
 		plot_matrix.axis.major_tick_line_color = None
 		return plot_matrix
+	def read_dataframe(self):
+		df1 = pd.read_csv('data/'+self.select_data_files1.value)
+		df2 = pd.read_csv('data/'+self.select_data_files2.value)
 
+		return (df1,df2)
 table = Page()
