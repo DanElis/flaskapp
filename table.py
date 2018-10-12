@@ -60,18 +60,18 @@ class Page():
 
 		self.Y_COL = 'Depth'
 		self.main_df1,self.main_df2 = self.read_dataframe()
-		self.change_case_depth(self.main_df1,self.main_df2)
-
+		self.change_case_depth(self.main_df1,self.main_df2) #изменить название и в функции изменить шаг в дф
+		#self.change
 		self.df1 = self.main_df1.copy()
 		self.df2 = self.main_df2.copy()
 
-		self.slider_depth = RangeSlider(start = self.min_total_depth(self.main_df1,self.main_df2), 
+		self.slider_depth = RangeSlider(start = self.min_total_depth(self.main_df1,self.main_df2), #изменить реализацию мин и мах
 				end = self.max_total_depth(self.main_df1,self.main_df2),step =1,
 				value = (self.min_total_depth(self.main_df1,self.main_df2),self.max_total_depth(self.main_df1,self.main_df2)))
 		self.slider_depth.on_change('value', self.change_depth)
-		self.update_page(True)
+		self.update_page()
 
-	def update_page(self,is_change):
+	def update_page(self):
 		
 
 		self.columns_df1 = [col for col in self.df1.columns if self.is_number(col,self.df1)]
@@ -115,7 +115,7 @@ class Page():
 	def change_depth(self, attr, old, new):
 		self.df1 = self.df1[(self.df1[self.Y_COL] >= self.slider_depth.value[0]) & (self.df1[self.Y_COL] <= self.slider_depth.value[1])]
 		self.df2 = self.df2[(self.df2[self.Y_COL] >= self.slider_depth.value[0]) & (self.df2[self.Y_COL] <= self.slider_depth.value[1])]
-		self.update_page(False)
+		self.update_page()
 	def min_total_depth(self,df1,df2):
 		return df1[self.Y_COL].min()
 	def max_total_depth(self,df1,df2):
@@ -127,7 +127,15 @@ class Page():
 		for col in df2.columns:
 			if(col.lower() == self.Y_COL.lower()):
 				df2.rename(columns={col:self.Y_COL}, inplace=True)
+	'''	if(df1)
+		df_gis = pd.read_csv('gis.csv') 
+		df_gis = df_gis.astype(np.float32) 
 
+		df_git = pd.read_csv('git.csv') 
+		df_git = df_git.rename(columns={'0':'DEPT'}) 
+
+		df_gis = df_gis.set_index(['DEPT']) 
+		df_gis.reindex(df_git['DEPT'], method='nearest')'''
 	def is_number(self,col,df):
 		if(type(df[col][0]).__name__ == "int64" or type(df[col][0]).__name__ == "float64"):
 			return True
@@ -246,6 +254,9 @@ class Page():
 	def read_dataframe(self):
 		df1 = pd.read_csv('data/'+self.select_data_files1.value)
 		df2 = pd.read_csv('data/'+self.select_data_files2.value)
-
+		min = self.min_total_depth(self.df1,self.df2)
+		max = self.max_total_depth(self.df1,self.df2)
+		self.df1 = self.df1[(self.df1[self.Y_COL] >= min) & (self.df1[self.Y_COL] <= max)]
+		self.df2 = self.df2[(self.df2[self.Y_COL] >= min) & (self.df2[self.Y_COL] <= max)]
 		return (df1,df2)
 table = Page()
