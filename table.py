@@ -254,9 +254,10 @@ class Page():
 	def read_dataframe(self):
 		df1 = pd.read_csv('data/'+self.select_data_files1.value)
 		df2 = pd.read_csv('data/'+self.select_data_files2.value)
-		min = self.min_total_depth(self.df1,self.df2)
-		max = self.max_total_depth(self.df1,self.df2)
-		self.df1 = self.df1[(self.df1[self.Y_COL] >= min) & (self.df1[self.Y_COL] <= max)]
-		self.df2 = self.df2[(self.df2[self.Y_COL] >= min) & (self.df2[self.Y_COL] <= max)]
+		self.change_case_depth(df1,df2)
+		min = self.min_total_depth(df1,df2)
+		max = self.max_total_depth(df1,df2)
+		df1 = df1[(df1[self.Y_COL] >= min) & (df1[self.Y_COL] <= max)]
+		df2 = df2[(df2[self.Y_COL] >= min) & (df2[self.Y_COL] <= max)]
 		return (df1,df2)
 table = Page()
