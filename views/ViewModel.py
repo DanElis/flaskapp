@@ -61,7 +61,7 @@ class ViewModel():
 	def get_select_model(self):
 		return self.select_model
 	def load_model(self):
-		path_to_dir = '/home/wer/diplom/flaskapp/flaskapp/data/models'
+		path_to_dir = 'data/models'
 		for file in os.listdir(path_to_dir):
 			
 			if not file.endswith('.pickle'):

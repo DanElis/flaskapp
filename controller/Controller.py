@@ -18,7 +18,7 @@ import views.ViewModel
 
 WIDTH_MATRIX = 1
 HEIGHT_MATRIX = 1
-DATA_DIR = '/home/wer/diplom/flaskapp/flaskapp/data/mydata'
+DATA_DIR = 'data/mydata'
 
 class Controller():
 
